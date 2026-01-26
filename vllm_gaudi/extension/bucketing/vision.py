@@ -23,7 +23,12 @@ MULTIMODAL_CONFIG = {
         'is_batch_based': False,
         # patches per image
         'buckets': [196, 256, 441, 480, 576, 900, 1156]
-    }
+    },
+    'deepseek_ocr': {
+        'is_batch_based': False,
+        'buckets': [0, 2, 3, 4, 5, 6],
+        'resolution_list': [(640, 300), None, (736, 300), (896, 300), (1248, 300), (1280, 260), (1280, 120)],
+    },
 }
 
 
