@@ -38,6 +38,7 @@ class HPUVisionBucketManager:
         self.is_batch_based = is_batch_based if is_batch_based is not None else config['is_batch_based']
 
         self.qwen2_5_vl = 'qwen2_5_vl' in model_name.lower()
+        self.resolution_list = config.get('resolution_list', None)
 
         envvar = os.environ.get('VLLM_MULTIMODAL_BUCKETS', "")
 
@@ -169,9 +170,19 @@ class HPUVisionBucketManager:
 
     def bucket_to_image_resolution(self, patch_size: int = 14):
         """
-        Calculate image resolution by first determining height from target_patches,
+        If resolution list is provided, using it directly. If not,
+        calculate image resolution by first determining height from target_patches,
         then deriving width from aspect ratio.
         """
+        if self.resolution_list is not None:
+            resolution_list = []
+            for target_patches in self.multimodal_buckets:
+                res = self.resolution_list[target_patches] \
+                    if target_patches < len(self.resolution_list) else None
+                if res:
+                    resolution_list.append(res)
+            return resolution_list
+
         aspect_ratios = [
             (1, 1),  # 1:1 square
             (4, 3),  # 4:3 landscape
