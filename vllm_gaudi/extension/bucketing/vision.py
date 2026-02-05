@@ -29,6 +29,11 @@ MULTIMODAL_CONFIG = {
         'buckets': [0, 2, 3, 4, 5, 6],
         'resolution_list': [(640, 300), None, (736, 300), (896, 300), (1248, 300), (1280, 260), (1280, 120)],
     },
+    'deepseek_vl_v2': {
+        'is_batch_based': False,
+        'buckets': [0, 2, 3, 4, 5, 6],
+        'resolution_list': [(640, 300), None, (800, 400), (896, 300), (1248, 300), (1280, 260), (1280, 120)],
+    },
 }
 
 

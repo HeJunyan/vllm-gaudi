@@ -14,6 +14,9 @@ from vllm.multimodal import MULTIMODAL_REGISTRY
 from vllm.multimodal.inputs import MultiModalDataDict
 from vllm.model_executor.models.deepseek_ocr2 import (
     DeepseekOCR2ForCausalLM,
+    DeepseekOCR2MultiModalProcessor,
+    DeepseekOCR2ProcessingInfo,
+    DeepseekOCR2DummyInputsBuilder,
 )
 from vllm.model_executor.models.deepencoder2 import (
     CustomQwen2Decoder,
@@ -40,6 +43,36 @@ class HpuDeepseekOCR2Visual(nn.Module):
         return features_2
 
 
+class HpuDeepseekOCR2DummyInputsBuilder(DeepseekOCR2DummyInputsBuilder):
+    def get_dummy_mm_data(
+        self,
+        seq_len: int,
+        mm_counts: Mapping[str, int],
+        mm_options: Mapping[str, BaseDummyOptions] | None = None,
+    ) -> MultiModalDataDict:
+        num_images = mm_counts.get("image", 0)
+
+        max_image_size = self.info.get_image_size_with_most_features()
+
+        # All possible deepseek ocr input is always
+        #    pixel_values: torch.Size([1, 3, 1024, 1024])
+        #    images_crop: torch.Size([sub_image_num, 3, 640, 640])
+        #    images_spatial_crop: torch.Size([1, 2])
+        # Where sub_image_num is in [0, 2, 3, 4, 5, 6], decided by the
+        # resolution and the aspect ratio.
+        # The follow code can imitate all the possible sub_image_num.
+        image_overrides = mm_options.get("image") if mm_options else None
+
+        return {
+            "image": self._get_dummy_images(
+                num_images=num_images,
+                width=max_image_size.width,
+                height=max_image_size.height,
+                overrides=image_overrides,
+            )
+        }
+
+
 #Change the forward of CustomQwen2Decoder, we need to upload
 #token_type_ids to HPU.
 def custom_qwen2_decoder_forward(
@@ -57,6 +90,12 @@ def custom_qwen2_decoder_forward(
         **kwargs,
     )
 
+
+@MULTIMODAL_REGISTRY.register_processor(
+    DeepseekOCR2MultiModalProcessor,
+    info=DeepseekOCR2ProcessingInfo,
+    dummy_inputs=HpuDeepseekOCR2DummyInputsBuilder,
+)
 class HpuDeepseekOCR2ForCausalLM(DeepseekOCR2ForCausalLM):
     def __init__(self, *, vllm_config: VllmConfig, prefix: str = ""):
         super().__init__(vllm_config=vllm_config, prefix=prefix)
