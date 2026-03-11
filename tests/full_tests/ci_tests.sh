@@ -39,6 +39,16 @@ if [ $? -ne 0 ]; then
 fi
 echo "Test with deepseek_v2 + inc dynamic quantization + tp 2 successful"
 
+# deepseek-ocr-2 multimodal
+echo "Testing DeepSeek-OCR-2 multimodal image inference"
+echo HABANA_VISIBLE_DEVICES=all VLLM_SKIP_WARMUP=true PT_HPU_LAZY_MODE=1 python -u vllm-gaudi/tests/models/language/generation/generation_mm.py --model-card-path vllm-gaudi/tests/full_tests/model_cards/DeepSeek-OCR-2.yaml
+HABANA_VISIBLE_DEVICES=all VLLM_SKIP_WARMUP=true PT_HPU_LAZY_MODE=1 python -u vllm-gaudi/tests/models/language/generation/generation_mm.py --model-card-path vllm-gaudi/tests/full_tests/model_cards/DeepSeek-OCR-2.yaml
+if [ $? -ne 0 ]; then
+    echo "Error: Test failed for DeepSeek-OCR-2 multimodal" >&2
+    exit -1
+fi
+echo "Test with DeepSeek-OCR-2 multimodal passed"
+
 # structured output
 echo "Testing structured output"
 echo HABANA_VISIBLE_DEVICES=all VLLM_CONTIGUOUS_PA=False VLLM_SKIP_WARMUP=True PT_HPU_LAZY_MODE=1 python -u vllm-gaudi/tests/full_tests/structured_outputs.py

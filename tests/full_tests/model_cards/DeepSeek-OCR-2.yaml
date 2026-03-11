@@ -1,0 +1,8 @@
+model_name: "deepseek-ai/DeepSeek-OCR-2"
+test_config:                                # List of test configurations. - modality to test for <modality>
+  - modality: image                         # modality (currently supports image and video)
+    extra_engine_args:                      # Optional extra arguments for the engine
+      max_model_len: 8192
+    input_data_config:                      # Configuration for the input data
+      num_prompts: 4                        # Number of samples to run
+      media_source: default                 # Source of the data to load
