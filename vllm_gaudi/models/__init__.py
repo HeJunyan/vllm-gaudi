@@ -15,3 +15,8 @@ def register_model():
     from vllm_gaudi.models.qwen3_vl import HpuQwen3_VLForConditionalGeneration  # noqa: F401
     ModelRegistry.register_model("Qwen3VLForConditionalGeneration",
                                  "vllm_gaudi.models.qwen3_vl:HpuQwen3_VLForConditionalGeneration")
+
+    from vllm_gaudi.models.deepseek_ocr2 import HpuDeepseekOCR2ForCausalLM  # noqa: F401
+    ModelRegistry.register_model(
+        "DeepseekOCR2ForCausalLM",
+        "vllm_gaudi.models.deepseek_ocr2:HpuDeepseekOCR2ForCausalLM")

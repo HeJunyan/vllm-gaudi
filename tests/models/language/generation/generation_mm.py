@@ -41,18 +41,27 @@ class PROMPT_DATA:
                     media_source: str = "default",
                     num_prompts: int = 1,
                     skip_vision_data=False):
+        model_name_lower = model_name.lower()
         if modality == "image":
-            pholder = "<start_of_image>" if "gemma" in model_name.lower() else "<|image_pad|>"
+            if "gemma" in model_name_lower:
+                pholder = "<start_of_image>"
+            elif "ocr" in model_name_lower:
+                pholder = "<image>"
+            else:
+                pholder = "<|image_pad|>"
         elif modality == "video":
-            pholder = "<video>" if "gemma" in model_name.lower() else "<|video_pad|>"
+            pholder = "<video>" if "gemma" in model_name_lower else "<|video_pad|>"
         else:
             raise ValueError(f"Unsupported modality: {modality}."
                              " Supported modality: [image, video]")
         questions = self._questions[modality]
-        prompts = [("<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n"
-                    f"<|im_start|>user\n<|vision_start|>{pholder}<|vision_end|>"
-                    f"{question}<|im_end|>\n"
-                    "<|im_start|>assistant\n") for question in questions]
+        if "ocr" in model_name_lower:
+            prompts = [f"{pholder}\n{question}" for question in questions]
+        else:
+            prompts = [("<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n"
+                        f"<|im_start|>user\n<|vision_start|>{pholder}<|vision_end|>"
+                        f"{question}<|im_end|>\n"
+                        "<|im_start|>assistant\n") for question in questions]
 
         data = self._data[modality](media_source)
         inputs = [{
@@ -74,11 +83,13 @@ def run_model(model_name: str, inputs: Union[dict, list[dict]], modality: str, *
     #    "max_pixels": 1280 * 28 * 28,
     #    "fps": 1,
     # }
-    passed_mm_processor_kwargs = extra_engine_args.get("mm_processor_kwargs", {})
-    passed_mm_processor_kwargs.setdefault("min_pixels", 28 * 28)
-    passed_mm_processor_kwargs.setdefault("max_pixels", 1280 * 28 * 28)
-    passed_mm_processor_kwargs.setdefault("fps", 1)
-    extra_engine_args.update({"mm_processor_kwargs": passed_mm_processor_kwargs})
+    # OCR models (e.g. DeepSeek-OCR) manage resolution internally; skip Qwen-style kwargs.
+    if "ocr" not in model_name.lower():
+        passed_mm_processor_kwargs = extra_engine_args.get("mm_processor_kwargs", {})
+        passed_mm_processor_kwargs.setdefault("min_pixels", 28 * 28)
+        passed_mm_processor_kwargs.setdefault("max_pixels", 1280 * 28 * 28)
+        passed_mm_processor_kwargs.setdefault("fps", 1)
+        extra_engine_args.update({"mm_processor_kwargs": passed_mm_processor_kwargs})
 
     extra_engine_args.setdefault("max_model_len", 32768)
     extra_engine_args.setdefault("max_num_seqs", 5)
